@@ -242,6 +242,8 @@ class ImagePaths {
   String get icPremium => _getImagePath('ic_premium.svg');
   String get icCloud => _getImagePath('ic_cloud.svg');
   String get icNoRules => _getImagePath('ic_no_rules.svg');
+  String get icZoomIn => _getImagePath('ic_zoom_in.svg');
+  String get icZoomOut => _getImagePath('ic_zoom_out.svg');
 
   String _getImagePath(String imageName) {
     return AssetsPaths.images + imageName;

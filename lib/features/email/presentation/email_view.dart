@@ -30,6 +30,7 @@ import 'package:tmail_ui_user/features/email/presentation/widgets/email_view_app
 import 'package:tmail_ui_user/features/email/presentation/widgets/email_view_bottom_bar_widget.dart';
 import 'package:tmail_ui_user/features/email/presentation/widgets/email_view_empty_widget.dart';
 import 'package:tmail_ui_user/features/email/presentation/widgets/email_view_loading_bar_widget.dart';
+import 'package:tmail_ui_user/features/email/presentation/widgets/email_zoom_control_widget.dart';
 import 'package:tmail_ui_user/features/email/presentation/widgets/information_sender_and_receiver_builder.dart';
 import 'package:tmail_ui_user/features/email/presentation/widgets/mail_unsubscribed_banner.dart';
 import 'package:tmail_ui_user/features/email/presentation/widgets/view_entire_message_with_message_clipped_widget.dart';
@@ -492,24 +493,43 @@ class EmailView extends GetWidget<SingleEmailController> {
     return usernameEvent.isNotEmpty && titleEvent.isNotEmpty;
   }
 
+  Widget _buildZoomControl() {
+    return Obx(() => EmailZoomControlWidget(
+      zoomLevel: controller.emailZoomLevel.value,
+      onZoomIn: controller.zoomIn,
+      onZoomOut: controller.zoomOut,
+      onZoomReset: controller.resetZoom,
+      isVisible: controller.emailContents.value?.isNotEmpty == true,
+    ));
+  }
+
   Widget _buildMobileBodyWidget(
     BuildContext context,
     PresentationEmail currentEmail,
     BoxConstraints constraints,
   ) {
-    return OptionalScroll(
-      scrollEnabled: !isInsideThreadDetailView,
-      child: Container(
-        width: double.infinity,
-        alignment: Alignment.center,
-        color: Colors.white,
-        child: Obx(() => _buildEmailMessage(
-          context: context,
-          presentationEmail: currentEmail,
-          calendarEvent: controller.calendarEvent,
-          bodyConstraints: constraints,
-        ))
-      )
+    return Stack(
+      children: [
+        OptionalScroll(
+          scrollEnabled: !isInsideThreadDetailView,
+          child: Container(
+            width: double.infinity,
+            alignment: Alignment.center,
+            color: Colors.white,
+            child: Obx(() => _buildEmailMessage(
+              context: context,
+              presentationEmail: currentEmail,
+              calendarEvent: controller.calendarEvent,
+              bodyConstraints: constraints,
+            ))
+          )
+        ),
+        Positioned(
+          bottom: 16,
+          right: 16,
+          child: _buildZoomControl(),
+        ),
+      ],
     );
   }
 
@@ -535,6 +555,11 @@ class EmailView extends GetWidget<SingleEmailController> {
               calendarEvent: calendarEvent,
               emailAddressSender: currentEmail.listEmailAddressSender.getListAddress(),
             ),
+          ),
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: _buildZoomControl(),
           ),
           Obx(() {
             bool isOverlayEnabled = controller.mailboxDashBoardController.isDisplayedOverlayViewOnIFrame ||

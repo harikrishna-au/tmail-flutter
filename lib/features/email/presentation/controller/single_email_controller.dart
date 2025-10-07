@@ -189,6 +189,7 @@ class SingleEmailController extends BaseController with AppLoaderMixin {
   final isEmailContentClipped = RxBool(false);
   final attendanceStatus = Rxn<AttendanceStatus>();
   final htmlContentViewKey = GlobalKey<HtmlContentViewState>();
+  final emailZoomLevel = 1.0.obs;
 
   final ScrollController emailScrollController = ScrollController();
 
@@ -674,6 +675,10 @@ class SingleEmailController extends BaseController with AppLoaderMixin {
         );
       } else {
         emailContents.value = success.htmlEmailContent;
+        // Apply zoom after content is loaded
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _applyZoomToWebView();
+        });
       }
 
       final isShowMessageReadReceipt = success.emailCurrent.hasReadReceipt(mailboxDashBoardController.mapMailboxById) == true;
@@ -714,6 +719,10 @@ class SingleEmailController extends BaseController with AppLoaderMixin {
         );
       } else {
         emailContents.value = success.htmlEmailContent;
+        // Apply zoom after content is loaded
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _applyZoomToWebView();
+        });
       }
 
       if (PlatformInfo.isMobile) {
@@ -792,6 +801,7 @@ class SingleEmailController extends BaseController with AppLoaderMixin {
     _identitySelected = null;
     isEmailContentClipped.value = false;
     attendanceStatus.value = null;
+    emailZoomLevel.value = 1.0;
     if (isEmailClosing) {
       emailLoadedViewState.value = Right(UIState.idle);
       viewState.value = Right(UIState.idle);
@@ -1743,6 +1753,10 @@ class SingleEmailController extends BaseController with AppLoaderMixin {
   void _handleParseCalendarEventFailure(ParseCalendarEventFailure failure) {
     emailLoadedViewState.value = Left<Failure, Success>(failure);
     emailContents.value = currentEmailLoaded.value?.htmlContent;
+    // Apply zoom after content is loaded
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _applyZoomToWebView();
+    });
   }
 
   void openNewTabAction(String link) {
@@ -2343,6 +2357,40 @@ class SingleEmailController extends BaseController with AppLoaderMixin {
       appToast.showToastErrorMessage(
         currentOverlayContext!,
         AppLocalizations.of(currentContext!).thisHtmlAttachmentCannotBePreviewed);
+    }
+  }
+
+  void zoomIn() {
+    if (emailZoomLevel.value < 3.0) {
+      emailZoomLevel.value = (emailZoomLevel.value + 0.25).clamp(0.5, 3.0);
+      _applyZoomToWebView();
+    }
+  }
+
+  void zoomOut() {
+    if (emailZoomLevel.value > 0.5) {
+      emailZoomLevel.value = (emailZoomLevel.value - 0.25).clamp(0.5, 3.0);
+      _applyZoomToWebView();
+    }
+  }
+
+  void resetZoom() {
+    emailZoomLevel.value = 1.0;
+    _applyZoomToWebView();
+  }
+
+  void _applyZoomToWebView() async {
+    final webViewController = htmlContentViewKey.currentState?.webViewController;
+    if (webViewController != null) {
+      try {
+        final zoomScript = '''
+          document.body.style.transform = "scale(${emailZoomLevel.value})";
+          document.body.style.transformOrigin = "top left";
+        ''';
+        await webViewController.runJavaScript(source: zoomScript);
+      } catch (e) {
+        log('SingleEmailController::_applyZoomToWebView: Failed to apply zoom: $e');
+      }
     }
   }
 

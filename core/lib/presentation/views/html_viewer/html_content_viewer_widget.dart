@@ -92,7 +92,9 @@ class HtmlContentViewState extends State<HtmlContentViewer> with AutomaticKeepAl
     _webViewSetting = InAppWebViewSettings(
       transparentBackground: true,
       verticalScrollBarEnabled: false,
-      supportZoom: false,
+      supportZoom: !widget.disableScrolling,
+      builtInZoomControls: false,
+      displayZoomControls: false,
       disableHorizontalScroll: widget.disableScrolling,
       disableVerticalScroll: widget.disableScrolling,
       horizontalScrollBarEnabled: !widget.disableScrolling,
